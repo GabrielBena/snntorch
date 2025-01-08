@@ -16,6 +16,7 @@ __neuron__ = [
     "rleaky",
     "rsynaptic",
     "synaptic",
+    "dualthresholdsynaptic",
     "sconv2dlstm",
     "slstm",
 ]
@@ -26,6 +27,7 @@ from .alpha import Alpha
 from .lapicque import Lapicque
 from .leaky import Leaky
 from .synaptic import Synaptic
+from .dual_synaptic import DualThresholdSynaptic
 
 from .rleaky import RLeaky
 from .rsynaptic import RSynaptic
