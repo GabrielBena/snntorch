@@ -194,12 +194,7 @@ class ATan(torch.autograd.Function):
     def backward(ctx, grad_output):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = (
-            ctx.alpha
-            / 2
-            / (1 + (torch.pi / 2 * ctx.alpha * input_).pow_(2))
-            * grad_input
-        )
+        grad = ctx.alpha / 2 / (1 + (torch.pi / 2 * ctx.alpha * input_).pow_(2)) * grad_input
         return grad, None
 
 
@@ -239,10 +234,15 @@ class Heaviside(torch.autograd.Function):
     is generated when :math:`U ≥ U_{\\rm thr}`."""
 
     @staticmethod
-    def forward(ctx, input_):
+    def forward(input_):
         out = (input_ > 0).float()
-        ctx.save_for_backward(out)
         return out
+
+    @staticmethod
+    def setup_context(
+        ctx: torch.Any, inputs: torch.Tuple[torch.Any], output: torch.Any
+    ) -> torch.Any:
+        ctx.save_for_backward(*output)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -361,11 +361,7 @@ class SpikeRateEscape(torch.autograd.Function):
     def backward(ctx, grad_output):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = (
-            grad_input
-            * ctx.slope
-            * torch.exp(-ctx.beta * torch.abs(input_ - 1))
-        )
+        grad = grad_input * ctx.slope * torch.exp(-ctx.beta * torch.abs(input_ - 1))
         return grad, None, None
 
 
@@ -382,7 +378,6 @@ def spike_rate_escape(beta=1, slope=25):
 
 
 class StochasticSpikeOperator(torch.autograd.Function):
-
     """
     Surrogate gradient of the Heaviside step function.
 
@@ -459,7 +454,6 @@ def SSO(mean=0, variance=0.2):
 
 
 class LeakySpikeOperator(torch.autograd.Function):
-
     """
     Surrogate gradient of the Heaviside step function.
 
@@ -501,9 +495,7 @@ class LeakySpikeOperator(torch.autograd.Function):
     def backward(ctx, grad_output):
         (out,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = (
-            grad_input * out + (~out.bool()).float() * ctx.slope * grad_input
-        )
+        grad = grad_input * out + (~out.bool()).float() * ctx.slope * grad_input
         return grad
 
 
@@ -561,11 +553,7 @@ class SparseFastSigmoid(torch.autograd.Function):
     def backward(ctx, grad_output):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = (
-            grad_input
-            / (ctx.slope * torch.abs(input_) + 1.0) ** 2
-            * (input_ > ctx.B).float()
-        )
+        grad = grad_input / (ctx.slope * torch.abs(input_) + 1.0) ** 2 * (input_ > ctx.B).float()
         return grad, None, None
 
 
