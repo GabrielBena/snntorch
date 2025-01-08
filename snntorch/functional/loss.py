@@ -32,19 +32,13 @@ class LossFunctions:
     def _population_code(self, spk_out, num_classes, num_outputs):
         """Count up spikes sequentially from output classes."""
         if not num_classes:
-            raise Exception(
-                "``num_classes`` must be specified if "
-                "``population_code=True``."
-            )
+            raise Exception("``num_classes`` must be specified if " "``population_code=True``.")
         if num_outputs % num_classes:
             raise Exception(
-                f"``num_outputs {num_outputs} must be a factor "
-                f"of num_classes {num_classes}."
+                f"``num_outputs {num_outputs} must be a factor " f"of num_classes {num_classes}."
             )
         device = spk_out.device
-        pop_code = torch.zeros(tuple([spk_out.size(1)] + [num_classes])).to(
-            device
-        )
+        pop_code = torch.zeros(tuple([spk_out.size(1)] + [num_classes])).to(device)
         for idx in range(num_classes):
             pop_code[:, idx] = (
                 spk_out[
@@ -60,11 +54,11 @@ class LossFunctions:
         return pop_code
 
     def _intermediate_reduction(self):
-        return self.reduction if self.weight is None else 'none'
+        return self.reduction if self.weight is None else "none"
 
     def _reduce(self, loss):
         # if reduction was delayed due to weight
-        requires_reduction = self.weight is not None and self.reduction == 'mean'
+        requires_reduction = self.weight is not None and self.reduction == "mean"
         return loss.mean() if requires_reduction else loss
 
 
@@ -171,7 +165,7 @@ class ce_count_loss(LossFunctions):
 
     """
 
-    def __init__(self, population_code=False, num_classes=False, reduction='mean', weight=None):
+    def __init__(self, population_code=False, num_classes=False, reduction="mean", weight=None):
         super().__init__(reduction=reduction, weight=weight)
         self.population_code = population_code
         self.num_classes = num_classes
@@ -183,9 +177,7 @@ class ce_count_loss(LossFunctions):
 
         if self.population_code:
             _, _, num_outputs = self._prediction_check(spk_out)
-            spike_count = self._population_code(
-                spk_out, self.num_classes, num_outputs
-            )
+            spike_count = self._population_code(spk_out, self.num_classes, num_outputs)
         else:
             spike_count = torch.sum(spk_out, 0)  # B x C
         log_p_y = log_softmax_fn(spike_count)
@@ -224,7 +216,7 @@ class ce_max_membrane_loss(LossFunctions):
 
     """
 
-    def __init__(self, reduction='mean', weight=None):
+    def __init__(self, reduction="mean", weight=None):
         super().__init__(reduction=reduction, weight=weight)
         self.__name__ = "ce_max_membrane_loss"
 
@@ -291,8 +283,8 @@ class mse_count_loss(LossFunctions):
         incorrect_rate=0,
         population_code=False,
         num_classes=False,
-        reduction='mean',
-        weight=None
+        reduction="mean",
+        weight=None,
     ):
         super().__init__(reduction=reduction, weight=weight)
         self.correct_rate = correct_rate
@@ -319,25 +311,15 @@ class mse_count_loss(LossFunctions):
             spike_count = torch.sum(spk_out, 0)  # B x C
 
         else:
-            on_target = int(
-                num_steps
-                * self.correct_rate
-                * (num_outputs / self.num_classes)
-            )
-            off_target = int(
-                num_steps
-                * self.incorrect_rate
-                * (num_outputs / self.num_classes)
-            )
+            on_target = int(num_steps * self.correct_rate * (num_outputs / self.num_classes))
+            off_target = int(num_steps * self.incorrect_rate * (num_outputs / self.num_classes))
             spike_count_target = spikegen.targets_convert(
                 targets,
                 num_classes=self.num_classes,
                 on_target=on_target,
                 off_target=off_target,
             )
-            spike_count = self._population_code(
-                spk_out, self.num_classes, num_outputs
-            )
+            spike_count = self._population_code(spk_out, self.num_classes, num_outputs)
 
         loss = loss_fn(spike_count, spike_count_target)
 
@@ -386,7 +368,9 @@ class mse_membrane_loss(LossFunctions):
 
     #  to-do: add **kwargs to modify other keyword args in
     #  spikegen.targets_convert
-    def __init__(self, time_var_targets=False, on_target=1, off_target=0, reduction='mean', weight=None):
+    def __init__(
+        self, time_var_targets=False, on_target=1, off_target=0, reduction="mean", weight=None
+    ):
         super().__init__(reduction=reduction, weight=weight)
         self.time_var_targets = time_var_targets
         self.on_target = on_target
@@ -402,7 +386,7 @@ class mse_membrane_loss(LossFunctions):
             off_target=self.off_target,
         )
 
-        loss_shape = mem_out[0].shape if self._intermediate_reduction() == 'none' else (1)
+        loss_shape = mem_out[0].shape if self._intermediate_reduction() == "none" else (1)
         loss = torch.zeros(loss_shape, dtype=dtype, device=device)
 
         loss_fn = nn.MSELoss(reduction=self._intermediate_reduction())
@@ -481,9 +465,7 @@ class SpikeTime(nn.Module):
 
         # next need to check how tolerance copes with multi-spikes
         if self.tolerance:
-            spk_time_final = self.tolerance_fn(
-                spk_time_final, targets, self.tolerance
-            )
+            spk_time_final = self.tolerance_fn(spk_time_final, targets, self.tolerance)
 
         return spk_time_final, targets
 
@@ -563,12 +545,7 @@ class SpikeTime(nn.Module):
                 (i.e., multiply along T)."""
                 spk_time = (
                     spk_rec_tmp.transpose(0, -1)
-                    * (
-                        torch.arange(0, spk_rec_tmp.size(0))
-                        .detach()
-                        .to(device)
-                        + 1
-                    )
+                    * (torch.arange(0, spk_rec_tmp.size(0)).detach().to(device) + 1)
                 ).transpose(0, -1)
 
                 """extact n-th spike time (n=step) up to F."""
@@ -610,9 +587,7 @@ class SpikeTime(nn.Module):
             for i in range(spk_time_final.size(0)):
                 for j in range(spk_time_final.size(1)):
                     for k in range(spk_time_final.size(2)):
-                        spk_time_grad[
-                            spk_time_final[i, j, k].long(), j, k
-                        ] = -grad_output[i, j, k]
+                        spk_time_grad[spk_time_final[i, j, k].long(), j, k] = -grad_output[i, j, k]
             grad = spk_time_grad
             return grad, None, None
 
@@ -785,30 +760,26 @@ class mse_temporal_loss:
         off_target=-1,
         tolerance=0,
         multi_spike=False,
-        reduction='mean',
-        weight=None
+        reduction="mean",
+        weight=None,
     ):
         super().__init__()
 
         self.reduction = reduction
         self.weight = weight
-        self.loss_fn = nn.MSELoss(reduction=('none' if self.weight is not None else self.reduction))
-        self.spk_time_fn = SpikeTime(
-            target_is_time, on_target, off_target, tolerance, multi_spike
-        )
+        self.loss_fn = nn.MSELoss(reduction=("none" if self.weight is not None else self.reduction))
+        self.spk_time_fn = SpikeTime(target_is_time, on_target, off_target, tolerance, multi_spike)
         self.__name__ = "mse_temporal_loss"
 
     def __call__(self, spk_rec, targets):
-        spk_time, target_time = self.spk_time_fn(
-            spk_rec, targets
-        )  # return encoded targets
+        spk_time, target_time = self.spk_time_fn(spk_rec, targets)  # return encoded targets
         loss = self.loss_fn(
             spk_time / spk_rec.size(0), target_time / spk_rec.size(0)
         )  # spk_time_final: num_spikes x B x Nc. # Same with targets.
 
         if self.weight is not None:
             loss = loss * self.weight[targets]
-            if self.reduction == 'mean':
+            if self.reduction == "mean":
                 loss = loss.mean()
 
         return loss
@@ -858,7 +829,7 @@ class ce_temporal_loss:
 
     """
 
-    def __init__(self, inverse="negate", reduction='mean', weight=None):
+    def __init__(self, inverse="negate", reduction="mean", weight=None):
         super().__init__()
 
         self.reduction = reduction
@@ -871,9 +842,7 @@ class ce_temporal_loss:
         self.__name__ = "ce_temporal_loss"
 
     def __call__(self, spk_rec, targets):
-        spk_time, _ = self.spk_time_fn(
-            spk_rec, targets
-        )  # return encoded targets
+        spk_time, _ = self.spk_time_fn(spk_rec, targets)  # return encoded targets
         if self.inverse == "negate":
             spk_time = -spk_time
         if self.inverse == "reciprocal":
@@ -892,6 +861,5 @@ class ce_temporal_loss:
     def _ce_temporal_cases(self):
         if self.inverse != "negate" and self.inverse != "reciprocal":
             raise ValueError(
-                '`inverse` must be of type string containing either "negate" '
-                'or "reciprocal".'
+                '`inverse` must be of type string containing either "negate" ' 'or "reciprocal".'
             )
