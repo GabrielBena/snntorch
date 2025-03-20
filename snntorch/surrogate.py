@@ -1,6 +1,6 @@
 import torch
 import math
-
+from typing import Any
 # Spike-gradient functions
 
 # slope = 25
@@ -240,8 +240,8 @@ class Heaviside(torch.autograd.Function):
 
     @staticmethod
     def setup_context(
-        ctx: torch.Any, inputs: torch.Tuple[torch.Any], output: torch.Any
-    ) -> torch.Any:
+        ctx: Any, inputs: tuple[Any], output: Any
+    ) -> Any:
         ctx.save_for_backward(*output)
 
     @staticmethod
