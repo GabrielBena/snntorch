@@ -4,7 +4,7 @@ examples/data/
 __pycache__/
 *.py[cod]
 *$py.class
-
+.history 
 # C extensions
 *.so
 

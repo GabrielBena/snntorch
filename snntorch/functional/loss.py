@@ -306,7 +306,6 @@ class mse_count_loss(LossFunctions):
         loss_fn = nn.MSELoss(reduction=self._intermediate_reduction())
 
         if not self.population_code:
-
             # generate ideal spike-count in C sized vector
             on_target = int(num_steps * self.correct_rate)
             off_target = int(num_steps * self.incorrect_rate)
@@ -424,6 +423,7 @@ class mse_membrane_loss(LossFunctions):
 # Uses a sign estimator - approximates leaky as gradient is undefined.
 # for neurons with defined gradients, this leads to an approximation.
 
+
 # Use labels by default unless target_is_time = True
 class SpikeTime(nn.Module):
     """Used by ce_temporal_loss and mse_temporal_loss to convert spike
@@ -509,6 +509,7 @@ class SpikeTime(nn.Module):
             0's indicate no spike --> +1 is first time step.
             Transpose accounts for broadcasting along final dimension
             (i.e., multiply along T)."""
+            device = spk_rec.device
             spk_time = (
                 spk_rec.transpose(0, -1)
                 * (torch.arange(0, spk_rec.size(0)).detach().to(device) + 1)
